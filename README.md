@@ -4,7 +4,7 @@ Televisor en miniatura de Los Simpson con una ESP32-2432S028 ("CYD"). Un interru
 la pantalla táctil muestra la lista de capítulos y la reproducción tiene controles táctiles.
 Todo el contenido está en una microSD.
 
-**Versión 1.0:** video MJPEG 320x240 a **15 fps** con audio sincronizado, menú táctil y barra de controles.
+**Versión 1.1:** video MJPEG 320x240 a **15 fps** con audio sincronizado, menú táctil, barra de controles y reproducción continua de la lista.
 
 ## Hardware
 
@@ -18,6 +18,7 @@ Todo el contenido está en una microSD.
 ## Controles (pantalla táctil)
 
 - **Menú:** tocar un capítulo para reproducirlo. Tocar la cabecera cambia de página.
+- **Reproducción continua:** al terminar un capítulo sigue con el siguiente de la lista; tras el último vuelve al primero. Solo el botón "menú" de la barra vuelve a la lista.
 - **Durante la reproducción:** tocar la pantalla muestra una barra inferior con **menú**, **pausa/play**, **−** y **+** (volumen en pasos de 10 %). Se oculta sola a los 5 s.
 - **Primer arranque:** pide tocar 3 cruces para calibrar el touch (se guarda). Para recalibrar, tocar la pantalla durante el primer segundo tras encender.
 

@@ -47,6 +47,7 @@ ffmpeg -y -i capitulo.mp4 -ac 1 -ar 22050 -af loudnorm -c:a pcm_u8 -c:v mjpeg -q
 - Funcionamiento: parsea el AVI a mano (chunks `00dc` video, `01wb` audio), decodifica JPEG con JPEGDEC. Core 1: lee la SD (con buffer de 8 KB), decodifica y manda el audio a un stream buffer. Core 0: una tarea dibuja los bloques con Arduino_GFX y otra escribe el audio al DAC en bloques fijos de 512 bytes (con tamaños irregulares el DAC se atoraba). El buffer de audio limita el desfase imagen-sonido y, si queda casi vacío, se omite la decodificación de un fotograma.
 - Pantalla a 40 MHz (`DISPLAY_SPI_HZ`): a 80 MHz aparecen líneas verticales y franjas corruptas.
 - Touch XPT2046 leído por software (bus propio), con calibración de 3 puntos guardada en la memoria de la placa. Barra de controles (menú, pausa/play, −, +) mezclada en el core 0 dentro de cada bloque de video; se oculta a los 5 s. Volumen 0-10 con ganancia máxima `VOLUME_MAX_GAIN` (2.0).
+- Reproducción continua: `playAvi` devuelve `true` si el capítulo terminó solo y `false` si el usuario volvió al menú o el archivo falló; `playSeries()` encadena el siguiente (el último vuelve al primero) y sale al menú en el segundo caso.
 - `AUTOPLAY_FIRST 1` reproduce el primer .avi sin menú (modo prueba). Con `0` (valor actual) arranca en el menú táctil.
 - `TOUCH_DEBUG 1` imprime lecturas por serie y marca un punto rojo en el menú; ponerlo en 0 para uso normal.
 
@@ -66,7 +67,7 @@ El puerto depende del sistema (COMx en Windows, /dev/ttyUSB0 o /dev/ttyACM0 en L
 **En esta placa la subida a 921600 baudios falla** ("Unable to verify flash chip connection"). Usar `--upload-property upload.speed=115200` (o Upload Speed 115200 en el IDE). El Monitor Serie del IDE bloquea el puerto: cerrarlo antes de subir. arduino-cli exige que la carpeta del sketch se llame `mini_tv_simpsons`.
 
 ## Estado actual
-**v1.0** (oct 2026): compila, corre en la placa y está probado en un capítulo (~2 min de reproducción continua; un capítulo completo de 20 min no se ha verificado).
+**v1.1** (oct 2026): compila, corre en la placa y se ha visto un capítulo completo hasta el final, con paso automático al siguiente. (v1.0: video 15 fps, audio sincronizado, menú y controles táctiles.)
 - Video a **15,0 fps** sostenidos, audio continuo y sincronía perfecta, imagen limpia a 40 MHz.
 - Menú táctil y barra de controles táctiles funcionando (menú, pausa/play, volumen ±10 %).
 - 3 capítulos de prueba en la SD (`35x01_1080p.avi` ... `35x03_1080p.avi`, ya a 320x240).

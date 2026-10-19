@@ -532,19 +532,20 @@ uint32_t brPos(File &f) {
   return f.position() - (sdLen - sdPos);
 }
 
-void playAvi(const String &path) {
+// true si el capitulo termino solo; false si el usuario volvio al menu o el archivo fallo.
+bool playAvi(const String &path) {
   File f = SD.open(path);
   if (!f) {
     msg("No se pudo abrir", RED);
     delay(1500);
-    return;
+    return false;
   }
   uint8_t h[12];
   if (!readExact(f, h, 12) || memcmp(h, "RIFF", 4) || memcmp(h + 8, "AVI ", 4)) {
     msg("AVI invalido", RED);
     f.close();
     delay(1500);
-    return;
+    return false;
   }
 
   // Buscar la lista "movi" (entrando en los LIST de cabecera)
@@ -567,7 +568,7 @@ void playAvi(const String &path) {
     msg("Sin datos movi", RED);
     f.close();
     delay(1500);
-    return;
+    return false;
   }
 
   gfx->fillScreen(BLACK);
@@ -589,7 +590,10 @@ void playAvi(const String &path) {
   while (brRead(f, c, 8)) {
     uint32_t sz = le32(c + 4);
     chunks++;
-    if (ctrlPoll(paused, ovTs, lastSz)) break;  // "Menu"
+    if (ctrlPoll(paused, ovTs, lastSz)) {  // "Menu"
+      toMenu = true;
+      break;
+    }
     while (paused) {  // en pausa se alimenta silencio para que el DAC no repita audio viejo
       audioWrite(silence, sizeof(silence));
       if (ctrlPoll(paused, ovTs, lastSz)) {
@@ -661,6 +665,7 @@ void playAvi(const String &path) {
 
     if (digitalRead(PIN_BTN_PLAY) == LOW) {  // volver al menu
       while (digitalRead(PIN_BTN_PLAY) == LOW) delay(5);
+      toMenu = true;
       break;
     }
   }
@@ -672,6 +677,7 @@ void playAvi(const String &path) {
   Serial.printf("Frames: %lu, saltados: %lu, saltados sync: %lu, tiempo: %lu ms, fps: %.1f\n",
                 (unsigned long)frames, (unsigned long)skipped, (unsigned long)dropped, (unsigned long)ms,
                 ms ? frames * 1000.0 / ms : 0.0);
+  return !toMenu;
 }
 
 // ---------- Menu ----------
@@ -767,6 +773,12 @@ void setup() {
   drawMenu();
 }
 
+// Reproduce desde `sel`; al terminar un capitulo pasa al siguiente (el ultimo vuelve al primero).
+// Sale al menu si el usuario lo pide o si el archivo falla; `sel` queda en el capitulo en curso.
+void playSeries() {
+  while (playAvi(pathOf(sel))) sel = (sel + 1) % nFiles;
+}
+
 void loop() {
 #if AUTOPLAY_FIRST
   playAvi(pathOf(0));
@@ -790,7 +802,7 @@ void loop() {
       if (row < MENU_PER_PAGE && idx < nFiles) {  // tocar un capitulo lo reproduce
         sel = idx;
         drawMenu();
-        playAvi(pathOf(sel));
+        playSeries();
         drawMenu();
       } else {
         drawMenu();
@@ -802,7 +814,7 @@ void loop() {
     drawMenu();
   }
   if (pressed(PIN_BTN_PLAY)) {
-    playAvi(pathOf(sel));
+    playSeries();
     drawMenu();
   }
 #endif
